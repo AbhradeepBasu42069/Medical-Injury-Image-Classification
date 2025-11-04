@@ -63,6 +63,9 @@ Follow these steps to run the project locally.
   * Python 3.8+
   * MySQL Server
   * Git
+  * Datsets :
+    - https://www.kaggle.com/datasets/yasinpratomo/wound-dataset
+    - https://www.kaggle.com/datasets/shubhambaid/skin-burn-dataset
 
 ### 1\. Clone the Repository
 
