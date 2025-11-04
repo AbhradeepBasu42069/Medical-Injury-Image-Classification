@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Injury Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- Base & Theme --- */
+        :root {
+            --color-bg: #0a0a1f;
+            --color-primary: #00ffff;
+            --color-secondary: #ff00ff;
+            --color-text: #e0e0ff;
+            --color-card-bg: rgba(10, 30, 60, 0.85);
+            --color-border: rgba(0, 255, 255, 0.5);
+            --font-primary: 'Orbitron', sans-serif;
+            --font-secondary: 'Rajdhani', sans-serif;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-secondary);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            padding: 20px;
+            background-image:
+                linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-primary);
+            color: var(--color-primary);
+            text-shadow: 0 0 10px var(--color-primary);
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        p, li {
+            line-height: 1.7;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        /* --- Card Styling --- */
+        .card {
+            background: var(--color-card-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        /* --- 1. Upload Section --- */
+        #upload-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #imageFile {
+            display: none; /* Hide the default input */
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 12px 25px;
+            background: var(--color-primary);
+            color: var(--color-bg);
+            font-family: var(--font-primary);
+            font-weight: 700;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .upload-label:hover {
+            background: #fff;
+            box-shadow: 0 0 15px var(--color-primary);
+        }
+
+        #image-preview {
+            width: 100%;
+            max-width: 400px;
+            min-height: 100px;
+            border: 2px dashed var(--color-border);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        #image-preview img {
+            width: 100%;
+            height: auto;
+            display: none; /* Hidden until an image is selected */
+        }
+        #preview-text {
+            color: var(--color-border);
+            font-family: var(--font-secondary);
+        }
+
+        #analyze-btn {
+            padding: 12px 30px;
+            font-family: var(--font-primary);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--color-bg);
+            background: var(--color-secondary);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px var(--color-secondary);
+            transition: all 0.3s ease;
+        }
+        #analyze-btn:hover {
+            background: #fff;
+            color: var(--color-secondary);
+        }
+        #analyze-btn:disabled {
+            background: #555;
+            color: #999;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* --- 2. Results Section --- */
+        #results-card {
+            display: none; /* Hidden until prediction is done */
+            text-align: center;
+        }
+
+        #result-content h3 {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+        #result-content h3 span {
+            color: var(--color-secondary);
+            font-weight: 700;
+        }
+
+        #confidence-bar-container {
+            width: 80%;
+            height: 30px;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 15px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        #confidence-bar {
+            width: 0%; /* Will be set by JS */
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-secondary), var(--color-primary));
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 10px var(--color-primary);
+        }
+
+        /* --- 3. First Aid Section --- */
+        #first-aid-card {
+            display: none; /* Hidden until prediction is done */
+        }
+        #first-aid-content ul {
+            list-style-position: inside;
+            margin-left: 10px;
+        }
+
+        /* --- 4. Project Info Section --- */
+        #info-card a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+        #info-card a:hover {
+            text-decoration: underline;
+        }
+
+        /* --- Loader Spinner --- */
+        #loader {
+            display: none; /* Hidden by default */
+            margin: 20px auto;
+            border: 5px solid var(--color-card-bg);
+            border-top: 5px solid var(--color-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>AI Injury Classifier</h1>
+
+        <div class="card" id="upload-card">
+            <h2>1. Upload Injury Image</h2>
+            <form id="upload-form">
+                <div id="image-preview">
+                    <span id="preview-text">Image Preview</span>
+                    <img id="preview-img" src="#" alt="Image Preview" />
+                </div>
+                <label for="imageFile" class="upload-label">Click to Select Image</label>
+                <input type="file" id="imageFile" name="imageFile" accept="image/*" required>
+                <button type="submit" id="analyze-btn" disabled>Analyze Injury</button>
+            </form>
+        </div>
+
+        <div class="card" id="results-card">
+            <h2>2. Analysis Result</h2>
+            <div id="loader"></div>
+            <div id="result-content" style="display: none;">
+                <h3>Predicted Injury: <span id="injury-type"></span></h3>
+                <h3>Confidence: <span id="confidence-percent"></span></h3>
+                <div id="confidence-bar-container">
+                    <div id="confidence-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="first-aid-card">
+            <h2>3. First Aid Instructions</h2>
+            <div id="first-aid-content">
+                <p>First aid instructions will appear here after analysis.</p>
+            </div>
+        </div>
+
+        <div class="card" id="info-card">
+            <h2>About This Project</h2>
+            <h3>The Artificial Intelligence (AI)</h3>
+            <p>
+                This system uses a Convolutional Neural Network (CNN) to classify injury images. Specifically, it uses a pre-trained model called MobileNetV2 with a new classification head added on top (a technique called Transfer Learning).
+            </p>
+            <ul>
+                <li>The model was trained on a dataset of images sorted into classes (like 'burns', 'wounds', etc.).</li>
+                <li>When you upload an image, it is resized to 224x224 pixels and normalized.</li>
+                <li>It's then passed through the <code>injury_classifier.h5</code> model, which outputs a confidence score for each possible injury type.</li>
+                <li>The highest score is chosen as the final prediction.</li>
+            </ul>
+            <h3>The Database (DBMS) Component</h3>
+            <p>
+                This web page demonstrates the AI model but does not connect to the database for security reasons. The full project, as shown in your <code>database.py</code> script, connects to a MySQL database named <code>injury_ai</code>.
+            </p>
+            <ul>
+                <li>The <code>predictions</code> table is designed to log every analysis performed by the system.</li>
+                <li>It stores the predicted <code>injury_type</code>, the <code>confidence</code> score, the <code>image_path</code>, and a <code>timestamp</code>.</li>
+                <li>This database creates a valuable, persistent record of the model's performance and usage, which can be used for auditing, further model refinement, or tracking injury trends.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- Get DOM Elements ---
+        const uploadForm = document.getElementById('upload-form');
+        const imageInput = document.getElementById('imageFile');
+        const previewImg = document.getElementById('preview-img');
+        const previewText = document.getElementById('preview-text');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        
+        const resultsCard = document.getElementById('results-card');
+        const loader = document.getElementById('loader');
+        const resultContent = document.getElementById('result-content');
+        const injuryTypeEl = document.getElementById('injury-type');
+        const confidencePercentEl = document.getElementById('confidence-percent');
+        const confidenceBar = document.getElementById('confidence-bar');
+
+        const firstAidCard = document.getElementById('first-aid-card');
+        const firstAidContent = document.getElementById('first-aid-content');
+
+        // --- First Aid Database (JavaScript Object) ---
+        const firstAidData = {
+            'burns': `
+                <h3>First Aid for Burns</h3>
+                <p><strong>Warning:</strong> For severe, widespread, or chemical/electrical burns, call emergency services immediately. These instructions are for minor (first-degree or small second-degree) burns.</p>
+                <ul>
+                    <li><strong>Cool the Burn:</strong> Hold the burned area under cool (not cold) running water for about 10-15 minutes or until the pain subsides.</li>
+                    <li><strong>Remove Constrictions:</strong> Gently remove rings or other tight items from the burned area before it swells.</li>
+                    <li><strong>Protect the Burn:</strong> Cover the burn with a sterile, non-stick bandage or clean cloth. Do not use fluffy cotton.</li>
+                    <li><strong>Do NOT Break Blisters:</strong> Blisters protect against infection. If one breaks, gently clean the area with mild soap and water and apply an antibiotic ointment.</li>
+                    <li><strong>Pain Relief:</strong> Take an over-the-counter pain reliever like ibuprofen or acetaminophen if needed.</li>
+                </ul>
+            `,
+            'wounds': `
+                <h3>First Aid for Wounds (Lacerations/Cuts)</h3>
+                <p><strong>Warning:</strong> Seek medical help if bleeding is severe, does not stop, the cut is deep (you can see fat or muscle), or it was caused by a dirty/rusty object.</p>
+                <ul>
+                    <li><strong>Stop the Bleeding:</strong> Apply direct, firm pressure to the wound using a clean cloth or sterile bandage. Maintain pressure for several minutes.</li>
+                    <li><strong>Clean the Wound:</strong> Gently rinse the wound with clean, cool water. Use mild soap to clean the area *around* the wound, but try to keep soap out of the cut itself.</li>
+                    <li><strong>Remove Debris:</strong> Use sterilized tweezers to remove any dirt or debris visible in the wound. If you can't remove it all, see a doctor.</li>
+                    <li><strong>Apply Antibiotic:</strong> Apply a thin layer of an over-the-counter antibiotic ointment (like Neosporin) to help keep the surface moist and prevent infection.</li>
+                    <li><strong>Cover the Wound:</strong> Place a sterile bandage over the wound. Change the dressing daily or whenever it becomes wet or dirty.</li>
+                </ul>
+            `,
+            'default': `
+                <h3>General First Aid Advice</h3>
+                <p>No specific instructions found for the predicted category. Please follow general wound care guidelines:</p>
+                <ul>
+                    <li>If bleeding, apply firm, direct pressure with a clean cloth.</li>
+                    <li>Gently clean the area with mild soap and clean water.</li>
+                    <li>Cover with a sterile bandage.</li>
+                    <li><strong>Always seek professional medical advice if you are unsure or the injury appears serious. This tool is not a substitute for a medical diagnosis.</strong></li>
+                </ul>
+            `
+        };
+
+
+        // --- Event Listener: Image Preview ---
+        imageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    previewText.style.display = 'none';
+                    analyzeBtn.disabled = false; // Enable the button
+                }
+                reader.readAsDataURL(file);
+            } else {
+                previewImg.style.display = 'none';
+                previewText.style.display = 'block';
+                analyzeBtn.disabled = true; // Disable the button
+            }
+        });
+
+        // --- Event Listener: Form Submission (Fetch API) ---
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop the form from submitting normally
+
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('imageFile', file);
+
+            // --- Show loading state ---
+            resultsCard.style.display = 'block';
+            resultContent.style.display = 'none';
+            firstAidCard.style.display = 'none';
+            loader.style.display = 'block';
+
+            // --- Send the image to the Flask server ---
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // --- Hide loading state ---
+                loader.style.display = 'none';
+                resultContent.style.display = 'block';
+                firstAidCard.style.display = 'block';
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // --- 1. Populate Results Card ---
+                const confidencePercent = (data.confidence * 100).toFixed(2);
+                injuryTypeEl.textContent = data.injury_type;
+                confidencePercentEl.textContent = `${confidencePercent}%`;
+                confidenceBar.style.width = `${confidencePercent}%`;
+
+                // --- 2. Populate First Aid Card ---
+                const injuryKey = data.injury_type.toLowerCase();
+                if (firstAidData[injuryKey]) {
+                    firstAidContent.innerHTML = firstAidData[injuryKey];
+                } else {
+                    firstAidContent.innerHTML = firstAidData['default'];
+                }
+            })
+            .catch(error => {
+                // --- Handle Errors ---
+                loader.style.display = 'none';
+                resultContent.style.display = 'block';
+                injuryTypeEl.textContent = 'Error';
+                confidencePercentEl.textContent = 'Could not process request.';
+                console.error('Error:', error);
+                firstAidCard.style.display = 'none';
+            });
+        });
+
+    </script>
+</body>
+</html>
